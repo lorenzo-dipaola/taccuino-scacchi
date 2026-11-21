@@ -6,11 +6,11 @@ const D = {};
 
 D.it = {
   "auth.title": "Accedi",
-  "auth.lead": "Inserisci la tua email: ti mandiamo un codice di accesso. Con lo stesso account ritrovi partite, statistiche ed esercizi su tutti i tuoi dispositivi.",
+  "auth.lead": "Inserisci la tua email: ti mandiamo un link di accesso. Con lo stesso account ritrovi partite, statistiche ed esercizi su tutti i tuoi dispositivi.",
   "auth.email": "Email",
-  "auth.send": "Invia codice",
-  "auth.sent": "Abbiamo inviato un codice a {email}. Inseriscilo qui sotto, oppure apri il link contenuto nella mail su questo dispositivo.",
-  "auth.code": "Codice",
+  "auth.send": "Invia link",
+  "auth.sent": "Abbiamo inviato una mail a {email}. Apri il link contenuto nella mail: l'accesso avviene nel browser in cui lo apri. Se la mail contiene un codice, puoi anche inserirlo qui sotto.",
+  "auth.code": "Codice (facoltativo)",
   "auth.verify": "Accedi",
   "auth.change": "Cambia email",
   "auth.wait": "Attendi…",
@@ -110,11 +110,11 @@ D.it = {
 
 D.en = {
   "auth.title": "Sign in",
-  "auth.lead": "Enter your email and we will send you a sign-in code. With the same account you find your games, statistics and puzzles on all your devices.",
+  "auth.lead": "Enter your email and we will send you a sign-in link. With the same account you find your games, statistics and puzzles on all your devices.",
   "auth.email": "Email",
-  "auth.send": "Send code",
-  "auth.sent": "We sent a code to {email}. Enter it below, or open the link in the email on this device.",
-  "auth.code": "Code",
+  "auth.send": "Send link",
+  "auth.sent": "We sent an email to {email}. Open the link in it: you will be signed in in the browser where you open it. If the email contains a code, you can also enter it below.",
+  "auth.code": "Code (optional)",
   "auth.verify": "Sign in",
   "auth.change": "Use another email",
   "auth.wait": "Please wait…",
@@ -214,11 +214,11 @@ D.en = {
 
 D.fr = {
   "auth.title": "Connexion",
-  "auth.lead": "Saisissez votre e-mail : nous vous envoyons un code de connexion. Avec le même compte, vous retrouvez vos parties, statistiques et exercices sur tous vos appareils.",
+  "auth.lead": "Saisissez votre e-mail : nous vous envoyons un lien de connexion. Avec le même compte, vous retrouvez vos parties, statistiques et exercices sur tous vos appareils.",
   "auth.email": "E-mail",
-  "auth.send": "Envoyer le code",
-  "auth.sent": "Nous avons envoyé un code à {email}. Saisissez-le ci-dessous, ou ouvrez le lien de l'e-mail sur cet appareil.",
-  "auth.code": "Code",
+  "auth.send": "Envoyer le lien",
+  "auth.sent": "Nous avons envoyé un e-mail à {email}. Ouvrez le lien qu'il contient : la connexion se fait dans le navigateur où vous l'ouvrez. Si l'e-mail contient un code, vous pouvez aussi le saisir ci-dessous.",
+  "auth.code": "Code (facultatif)",
   "auth.verify": "Se connecter",
   "auth.change": "Changer d'e-mail",
   "auth.wait": "Patientez…",
@@ -318,11 +318,11 @@ D.fr = {
 
 D.es = {
   "auth.title": "Iniciar sesión",
-  "auth.lead": "Escribe tu correo y te enviaremos un código de acceso. Con la misma cuenta encuentras tus partidas, estadísticas y ejercicios en todos tus dispositivos.",
+  "auth.lead": "Escribe tu correo y te enviaremos un enlace de acceso. Con la misma cuenta encuentras tus partidas, estadísticas y ejercicios en todos tus dispositivos.",
   "auth.email": "Correo electrónico",
-  "auth.send": "Enviar código",
-  "auth.sent": "Hemos enviado un código a {email}. Escríbelo abajo o abre el enlace del correo en este dispositivo.",
-  "auth.code": "Código",
+  "auth.send": "Enviar enlace",
+  "auth.sent": "Hemos enviado un correo a {email}. Abre el enlace que contiene: la sesión se inicia en el navegador donde lo abras. Si el correo incluye un código, también puedes escribirlo abajo.",
+  "auth.code": "Código (opcional)",
   "auth.verify": "Entrar",
   "auth.change": "Cambiar correo",
   "auth.wait": "Espera…",
