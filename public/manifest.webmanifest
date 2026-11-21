@@ -1,0 +1,16 @@
+{
+  "name": "Taccuino Scacchi",
+  "short_name": "Taccuino",
+  "description": "Analisi delle tue partite, abilità per tema e allenamento sui tuoi errori.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#1f2a36",
+  "lang": "it",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

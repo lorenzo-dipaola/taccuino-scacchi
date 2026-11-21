@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Taccuino Scacchi</title>
+  <meta name="description" content="Analizza le tue partite, misura le abilità per tema e allenati sui tuoi errori.">
+  <meta name="theme-color" content="#1f2a36">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/"><img src="icon.svg" alt=""><span>Taccuino <i>Scacchi</i></span></a>
+    <nav class="nav">
+      <a href="#/">Panoramica</a>
+      <a href="#/partite">Partite</a>
+      <a href="#/statistiche">Statistiche</a>
+      <a href="#/allenamento">Allenamento</a>
+      <a href="#/importa">Importa</a>
+      <a href="#/impostazioni" aria-label="Impostazioni">⚙</a>
+    </nav>
+  </header>
+  <div id="queue" class="queue" hidden></div>
+  <main id="app"></main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
