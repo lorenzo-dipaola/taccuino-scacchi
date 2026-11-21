@@ -9,6 +9,7 @@ import { CLASSES, winPct, scoreToCp } from './analysis.js';
 import { userScore } from './pgn.js';
 import { Board } from './board.js';
 import { radarSVG, evalGraphSVG, lineChartSVG, wdlBar } from './charts.js';
+import * as sync from './sync.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -73,8 +74,15 @@ const routes = [
   [/^#\/metodo$/, viewMethod],
 ];
 let currentView = null;
+let ready = false;
+const locked = () => sync.enabled && !sync.status.user;
 async function route() {
+  if (!ready) return;
+  document.body.classList.toggle('locked', locked());
+  if (locked()) { currentView = viewLogin; viewLogin(); return; }
   const h = location.hash || '#/';
+  // Tokens or errors from a magic-link redirect: handled by sync.js, not by the router.
+  if (/^#(access_token|error)=/.test(h)) return;
   document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('active', h === a.getAttribute('href') || (a.getAttribute('href') === '#/partite' && h.startsWith('#/partita/'))));
   for (const [re, fn] of routes) {
     const m = re.exec(h);
@@ -91,6 +99,10 @@ bus.addEventListener('data-changed', () => {
   refreshTimer = setTimeout(() => { if ([viewOverview, viewGames, viewStats].includes(currentView)) currentView(); }, 400);
 });
 bus.addEventListener('progress', () => renderQueueBar());
+// Sync: data pulled from another device, sign-in / sign-out, status changes.
+sync.syncBus.addEventListener('pulled', () => { bus.dispatchEvent(new Event('data-changed')); runQueue(); });
+sync.syncBus.addEventListener('auth', () => { if (ready && (locked() || currentView === viewLogin)) route(); });
+sync.syncBus.addEventListener('status', () => { if (currentView === viewSettings) renderSyncStatus(); });
 function renderQueueBar() {
   const bar = $('#queue');
   if (!qstate.running || !qstate.current) { bar.hidden = true; return; }
@@ -539,6 +551,58 @@ async function viewImport() {
   };
 }
 
+
+// ---------------------------------------------------------------- login (only when sync is configured)
+let loginEmail = '';
+function viewLogin(step = loginEmail ? 'code' : 'email', msg = '') {
+  const urlErr = /error_description=([^&]+)/.exec(location.hash);
+  if (urlErr && !msg) { msg = decodeURIComponent(urlErr[1].replace(/\+/g, ' ')); history.replaceState(null, '', location.pathname + location.search); }
+  app.innerHTML = `
+    <section class="card form login">
+      <h2>${t('auth.title')}</h2>
+      <p class="fine">${t('auth.lead')}</p>
+      ${step === 'email' ? `
+        <form id="lf">
+          <label class="field">${t('auth.email')}<input id="email" type="email" autocomplete="email" required value="${esc(loginEmail)}"></label>
+          <button class="btn primary" id="go">${t('auth.send')}</button>
+        </form>` : `
+        <p>${t('auth.sent', { email: `<b>${esc(loginEmail)}</b>` })}</p>
+        <form id="lf">
+          <label class="field">${t('auth.code')}<input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required></label>
+          <button class="btn primary" id="go">${t('auth.verify')}</button>
+          <button type="button" class="btn" id="back">${t('auth.change')}</button>
+        </form>`}
+      <p id="lmsg" class="${msg ? 'neg' : 'fine'}">${esc(msg)}</p>
+      <p class="fine">${t('auth.privacy')} <a href="#/metodo" id="lmeth">${t('auth.how')}</a></p>
+    </section>`;
+  $('#lmeth').onclick = (e) => { e.preventDefault(); app.insertAdjacentHTML('beforeend', `<article class="card prose">${METHOD[lang]}</article>`); e.target.remove(); };
+  $('#lf').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = $('#go'); btn.disabled = true; $('#lmsg').className = 'fine'; $('#lmsg').textContent = t('auth.wait');
+    try {
+      if (step === 'email') { loginEmail = $('#email').value.trim(); await sync.sendCode(loginEmail); viewLogin('code'); }
+      else { await sync.verifyCode(loginEmail, $('#code').value.trim()); loginEmail = ''; }
+    } catch (err) {
+      btn.disabled = false; $('#lmsg').className = 'neg'; $('#lmsg').textContent = authError(err);
+    }
+  };
+  if (step === 'code') $('#back').onclick = () => { loginEmail = ''; viewLogin('email'); };
+}
+function authError(err) {
+  const m = String(err?.message || err);
+  if (/rate|too many|seconds/i.test(m)) return t('auth.errRate');
+  if (/expired|invalid|token/i.test(m)) return t('auth.errCode');
+  if (/fetch|network/i.test(m)) return t('auth.errNet');
+  return m;
+}
+
+function renderSyncStatus() {
+  const el = $('#syncstat'); if (!el) return;
+  const st = sync.status;
+  el.className = st.error ? 'neg' : 'fine';
+  el.textContent = st.syncing ? t('sync.running') : st.error ? t('sync.error', { e: st.error }) : st.lastSync ? t('sync.last', { d: new Date(st.lastSync).toLocaleString(lang) }) : t('sync.never');
+}
+
 // ---------------------------------------------------------------- settings
 async function viewSettings() {
   const s = await db.getSettings();
@@ -557,9 +621,17 @@ async function viewSettings() {
       <label class="check"><input id="inacc" type="checkbox" ${s.includeInaccuracies ? 'checked' : ''}> ${t('se.inacc')}</label>
       <button class="btn primary" id="save">${t('se.save')}</button> <span id="saved" class="pos"></span>
     </section>
+    ${sync.enabled && sync.status.user ? `<section class="card">
+      <h2>${t('sync.title')}</h2>
+      <p>${t('sync.as', { email: `<b>${esc(sync.status.user.email)}</b>` })}</p>
+      <p id="syncstat" class="fine"></p>
+      <div class="btnrow"><button class="btn" id="syncnow">${t('sync.now')}</button>
+      <button class="btn danger" id="logout">${t('sync.logout')}</button></div>
+      <p class="fine">${t('sync.logoutHint')}</p>
+    </section>` : ''}
     <section class="card">
       <h2>${t('se.data')}</h2>
-      <p class="fine">${t('se.dataLead', { g: games.length, p: puzzles.length })}</p>
+      <p class="fine">${t(sync.enabled ? 'se.dataLeadSync' : 'se.dataLead', { g: games.length, p: puzzles.length })}</p>
       <div class="btnrow"><button class="btn" id="exp">${t('se.export')}</button>
       <label class="btn">${t('se.import')}<input type="file" id="imp" accept=".json" hidden></label>
       <button class="btn" id="reall">${t('se.reall')}</button>
@@ -579,7 +651,12 @@ async function viewSettings() {
   };
   $('#imp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; await db.importAll(JSON.parse(await f.text())); runQueue(); viewSettings(); };
   confirmClick($('#reall'), t('se.reallC'), async () => { for (const g of games) if (g.userColor) await reanalyse(g.id); });
-  confirmClick($('#wipe'), t('se.wipeC'), async () => { await db.wipe(); location.hash = '#/'; });
+  if ($('#syncnow')) {
+    renderSyncStatus();
+    $('#syncnow').onclick = () => sync.sync().catch(() => {});
+    confirmClick($('#logout'), t('sync.logoutC'), async () => { await sync.signOut(); });
+  }
+  confirmClick($('#wipe'), t(sync.enabled ? 'se.wipeCSync' : 'se.wipeC'), async () => { await db.wipe(); location.hash = '#/'; });
 }
 
 // ---------------------------------------------------------------- method
@@ -589,6 +666,10 @@ function viewMethod() {
 
 // ---------------------------------------------------------------- boot
 renderShell();
-route();
-runQueue();
+(async () => {
+  try { await sync.init(); } catch (e) { console.error(e); }
+  ready = true;
+  await route();
+  runQueue();
+})();
 if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -24,6 +24,18 @@ nessun server, nessun account, i dati restano in IndexedDB.
 
 La pagina **Metodo** dentro l'app spiega tutte le formule e dove sono approssimative.
 
+## Accesso e sincronizzazione (facoltativi)
+
+Senza configurazione l'app funziona solo in locale, senza login. Per attivare l'accesso via email e la sincronizzazione tra dispositivi serve un progetto [Supabase](https://supabase.com) (il piano gratuito basta):
+
+1. Crea un progetto (regione consigliata: Frankfurt).
+2. In *SQL Editor* esegui [`supabase/schema.sql`](supabase/schema.sql): crea la tabella `user_data` con le regole per cui ogni utente vede solo le proprie righe.
+3. In *Authentication → URL Configuration* imposta come *Site URL* l'indirizzo dell'app (per esempio `https://lorenzo-dipaola.github.io/taccuino-scacchi/`).
+4. In *Authentication → Emails → Magic Link* aggiungi al testo `Codice: {{ .Token }}`, così la mail contiene anche il codice da digitare.
+5. Inserisci *Project URL* e chiave *anon / publishable* in `src/config.js` (oppure come `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` al momento della build). Sono valori pubblici: la sicurezza è data dalle regole RLS. Non usare mai la chiave `service_role`.
+
+Quando è configurata, l'app chiede l'accesso prima di mostrare i dati. Ogni partita, esercizio e impostazione è una riga della tabella; le modifiche locali non ancora inviate hanno la precedenza su quelle scaricate. Il servizio email integrato di Supabase ha limiti bassi di invio orario: per molti utenti serve un SMTP proprio.
+
 ## Sviluppo
 
 ```bash

@@ -23,7 +23,7 @@ export const METHOD = {
     <h3>Esercizi</h3>
     <p>Ogni tuo errore, errore grave od occasione persa (perdita di almeno 10 punti) diventa un esercizio: la posizione prima della mossa, con la mossa del motore come soluzione. Se trovi un'altra mossa, il motore la verifica e la accetta se perde al massimo 3 punti. L'esercizio sparisce dopo N soluzioni corrette al primo tentativo.</p>
     <h3>Dati e licenze</h3>
-    <p>Tutto resta nel tuo browser (IndexedDB). I nomi delle aperture vengono dal database di Lichess e restano in inglese. Stockfish è GPLv3; i pezzi sono il set "cburnett" (GPLv2+); il database aperture è di Lichess (CC0).</p>`,
+    <h3>Dati e sincronizzazione</h3><p>I dati sono salvati nel browser (IndexedDB) e l'app funziona anche offline. Se hai effettuato l'accesso, ogni partita, esercizio e impostazione viene copiato nel tuo account (Supabase) e scaricato sugli altri dispositivi. In caso di conflitto vince la versione modificata più di recente su un dispositivo non ancora sincronizzato: se modifichi lo stesso esercizio su due dispositivi offline, una delle due modifiche va persa. L'analisi viene fatta una volta sola, sul dispositivo che importa la partita.</p><p> I nomi delle aperture vengono dal database di Lichess e restano in inglese. Stockfish è GPLv3; i pezzi sono il set "cburnett" (GPLv2+); il database aperture è di Lichess (CC0).</p>`,
 
   en: `<h2>How it works (and where it is approximate)</h2>
     <h3>Engine</h3>
@@ -48,7 +48,7 @@ export const METHOD = {
     <h3>Exercises</h3>
     <p>Each of your mistakes, blunders or missed chances (a loss of at least 10 points) becomes an exercise: the position before the move, with the engine's move as the solution. If you find another move, the engine checks it and accepts it if it loses at most 3 points. The exercise disappears after N correct first-try solutions.</p>
     <h3>Data and licences</h3>
-    <p>Everything stays in your browser (IndexedDB). Opening names come from the Lichess database and are in English. Stockfish is GPLv3; pieces are the "cburnett" set (GPLv2+); the opening database is from Lichess (CC0).</p>`,
+    <h3>Data and sync</h3><p>Data is stored in your browser (IndexedDB) and the app also works offline. When you are signed in, every game, puzzle and setting is copied to your account (Supabase) and downloaded on your other devices. In a conflict, the unsynced local version wins: if you change the same puzzle on two offline devices, one of the two changes is lost. Analysis runs once, on the device that imports the game.</p><p> Opening names come from the Lichess database and are in English. Stockfish is GPLv3; pieces are the "cburnett" set (GPLv2+); the opening database is from Lichess (CC0).</p>`,
 
   fr: `<h2>Fonctionnement (et limites)</h2>
     <h3>Moteur</h3>
@@ -73,7 +73,7 @@ export const METHOD = {
     <h3>Exercices</h3>
     <p>Chaque erreur, gaffe ou occasion manquée (perte d'au moins 10 points) devient un exercice : la position avant le coup, avec le coup du moteur comme solution. Si vous trouvez un autre coup, le moteur le vérifie et l'accepte s'il perd au plus 3 points. L'exercice disparaît après N solutions correctes du premier coup.</p>
     <h3>Données et licences</h3>
-    <p>Tout reste dans votre navigateur (IndexedDB). Les noms d'ouvertures viennent de la base Lichess et restent en anglais. Stockfish est sous GPLv3 ; les pièces sont le jeu « cburnett » (GPLv2+) ; la base d'ouvertures vient de Lichess (CC0).</p>`,
+    <h3>Données et synchronisation</h3><p>Les données sont enregistrées dans le navigateur (IndexedDB) et l'application fonctionne aussi hors ligne. Une fois connecté, chaque partie, exercice et réglage est copié dans votre compte (Supabase) et téléchargé sur vos autres appareils. En cas de conflit, la version locale non synchronisée l'emporte : si vous modifiez le même exercice sur deux appareils hors ligne, l'une des deux modifications est perdue. L'analyse est faite une seule fois, sur l'appareil qui importe la partie.</p><p> Les noms d'ouvertures viennent de la base Lichess et restent en anglais. Stockfish est sous GPLv3 ; les pièces sont le jeu « cburnett » (GPLv2+) ; la base d'ouvertures vient de Lichess (CC0).</p>`,
 
   es: `<h2>Cómo funciona (y dónde es aproximado)</h2>
     <h3>Motor</h3>
@@ -98,5 +98,5 @@ export const METHOD = {
     <h3>Ejercicios</h3>
     <p>Cada error, error grave u ocasión perdida (pérdida de al menos 10 puntos) se convierte en un ejercicio: la posición antes de la jugada, con la jugada del motor como solución. Si encuentras otra jugada, el motor la comprueba y la acepta si pierde como mucho 3 puntos. El ejercicio desaparece tras N soluciones correctas al primer intento.</p>
     <h3>Datos y licencias</h3>
-    <p>Todo se queda en tu navegador (IndexedDB). Los nombres de las aperturas vienen de la base de Lichess y están en inglés. Stockfish es GPLv3; las piezas son el juego «cburnett» (GPLv2+); la base de aperturas es de Lichess (CC0).</p>`,
+    <h3>Datos y sincronización</h3><p>Los datos se guardan en el navegador (IndexedDB) y la aplicación también funciona sin conexión. Con la sesión iniciada, cada partida, ejercicio y ajuste se copia en tu cuenta (Supabase) y se descarga en tus otros dispositivos. En caso de conflicto gana la versión local no sincronizada: si modificas el mismo ejercicio en dos dispositivos sin conexión, uno de los dos cambios se pierde. El análisis se hace una sola vez, en el dispositivo que importa la partida.</p><p> Los nombres de las aperturas vienen de la base de Lichess y están en inglés. Stockfish es GPLv3; las piezas son el juego «cburnett» (GPLv2+); la base de aperturas es de Lichess (CC0).</p>`,
 };
