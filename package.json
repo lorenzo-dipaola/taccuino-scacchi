@@ -12,6 +12,7 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.2",
     "chess.js": "^1.4.0",
     "idb": "^8.0.4",
     "stockfish": "^18.0.8"
