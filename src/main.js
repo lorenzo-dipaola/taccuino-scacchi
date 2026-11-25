@@ -10,6 +10,7 @@ import { userScore } from './pgn.js';
 import { Board } from './board.js';
 import { radarSVG, evalGraphSVG, lineChartSVG, wdlBar } from './charts.js';
 import * as sync from './sync.js';
+import { explainPuzzle, playLine } from './explain.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -100,7 +101,10 @@ bus.addEventListener('data-changed', () => {
 });
 bus.addEventListener('progress', () => renderQueueBar());
 // Sync: data pulled from another device, sign-in / sign-out, status changes.
-sync.syncBus.addEventListener('pulled', () => { bus.dispatchEvent(new Event('data-changed')); runQueue(); });
+sync.syncBus.addEventListener('pulled', () => {
+  bus.dispatchEvent(new Event('data-changed')); runQueue();
+  if (currentView === viewTraining && !trainBusy) viewTraining();
+});
 sync.syncBus.addEventListener('auth', () => { if (ready && (locked() || currentView === viewLogin)) route(); });
 sync.syncBus.addEventListener('status', () => { if (currentView === viewSettings) renderSyncStatus(); });
 function renderQueueBar() {
@@ -421,7 +425,9 @@ async function viewStats() {
 
 // ---------------------------------------------------------------- training
 let trainFilter = '';
+let trainBusy = false;
 async function viewTraining() {
+  trainBusy = false;
   const { puzzles, settings } = await loadAll();
   const active = activePuzzles(puzzles, settings);
   const archived = puzzles.length - active.length;
@@ -453,12 +459,13 @@ async function viewTraining() {
     <p>${t('tr.toMove', { c: turn === 'w' ? t('tr.white') : t('tr.black'), o: esc(p.opponent), d: fmtDate(p.date), m: movePrefix(p.fen) })}</p>
     <p class="tags">${p.themes.filter((k) => !['opening', 'middlegame', 'endgame'].includes(k)).map((k) => `<span class="tag">${esc(themeLabel(k))}</span>`).join('')}</p>
     <div class="progress-dots">${Array.from({ length: settings.puzzleRepeats }, (_, i) => `<span class="${i < p.solved ? 'on' : ''}"></span>`).join('')}</div>`;
-  panel.innerHTML = header + `<div id="fb"></div><div class="btnrow"><button class="btn" id="hint">${t('tr.hint')}</button><button class="btn" id="giveup">${t('tr.show')}</button></div>`;
-  $('#hint').onclick = () => { attempted = true; board.set(p.fen, { lastMove: null, arrows: [] }); board.selected = p.solution.slice(0, 2); board.render(); $('#fb').innerHTML = `<p class="muted">${t('tr.hintMsg')}</p>`; };
+  panel.innerHTML = header + `<div id="fb"></div><div class="btnrow" id="pzbtns"><button class="btn" id="hint">${t('tr.hint')}</button><button class="btn" id="giveup">${t('tr.show')}</button></div>`;
+  $('#hint').onclick = () => { attempted = true; trainBusy = true; board.set(p.fen, { lastMove: null, arrows: [] }); board.selected = p.solution.slice(0, 2); board.render(); $('#fb').innerHTML = `<p class="muted">${t('tr.hintMsg')}</p>`; };
   $('#giveup').onclick = () => fail(true);
 
   async function onMove(uci) {
     if (finished) return;
+    trainBusy = true;
     const res = new Chess(p.fen);
     const m = res.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
     board.set(res.fen(), { lastMove: uci });
@@ -475,7 +482,10 @@ async function viewTraining() {
   async function success(alt, san) {
     finished = true;
     board.interactive = false;
+    trainBusy = true;
     const counted = !attempted;
+    // Re-read before updating: another device may have synced progress since this view was drawn.
+    Object.assign(p, (await db.getPuzzle(p.id)) || {});
     if (counted) p.solved++;
     p.attempts++; p.lastSeen = Date.now();
     await db.putPuzzle(p);
@@ -486,17 +496,54 @@ async function viewTraining() {
   async function fail() {
     finished = true;
     board.interactive = false;
+    trainBusy = true;
+    Object.assign(p, (await db.getPuzzle(p.id)) || {});
     p.fails++; p.attempts++; p.lastSeen = Date.now();
     await db.putPuzzle(p);
     board.set(p.fen, { arrows: [{ from: p.solution.slice(0, 2), to: p.solution.slice(2, 4), kind: 'best' }] });
     finish(`<p class="neg">${t('tr.here')}</p>`);
   }
-  function finish(msg) {
-    const line = pvToSan(p.fen, p.pv, 8);
-    $('#fb').innerHTML = msg + `<p>${t('tr.solution')}: <b>${esc(p.solutionSan)}</b> <span class="muted">${esc(line.slice(1).join(' '))}</span></p>
-      <p>${t('tr.played')} <b>${esc(p.played)}</b> ${clsPill(p.cls)} <a href="#/partita/${p.gameId}/${p.ply + 1}">${t('tr.seeGame')}</a></p>`;
-    $('.btnrow').innerHTML = `<button class="btn primary" id="next">${t('tr.next')}</button>`;
+  async function finish(msg) {
+    const game = await db.getGame(p.gameId);
+    const plies = game?.analysis?.plies || [];
+    const ex = explainPuzzle(p, plies[p.ply], plies[p.ply + 1]);
+    const lines = { best: ex.best, game: ex.refutation };
+    let which = 'best', k = -1;
+    $('#fb').innerHTML = msg + `
+      <p>${t('tr.played')} <b>${esc(p.played)}</b> ${clsPill(p.cls)} <a href="#/partita/${p.gameId}/${p.ply + 1}">${t('tr.seeGame')}</a></p>
+      <div class="xp"><h4>${t('xp.title')}</h4><ul>${ex.parts.map((x) => `<li>${t(x.key, Object.fromEntries(Object.entries(x.params).map(([a, b]) => [a, esc(b)])))}</li>`).join('')}</ul>
+      <p class="fine">${t('xp.note')}</p></div>
+      <div class="linebox">
+        <div class="seg">${lines.game ? `<button class="btn sm on" data-l="best">${t('xp.lineBest')}</button><button class="btn sm" data-l="game">${t('xp.lineGame', { p: esc(p.played) })}</button>` : `<b>${t('xp.lineBest')}</b>`}</div>
+        <div id="linemoves" class="linemoves"></div>
+        <div class="btnrow"><button class="btn sm" id="lprev" aria-label="${t('nav.prev')}">◀</button><button class="btn sm" id="lnext" aria-label="${t('nav.next')}">▶</button> <span class="fine">${t('xp.step')}</span></div>
+      </div>`;
+    const label = (L, i) => { const [, turn, , , , full] = L.fens[i].split(' '); return turn === 'w' ? `${full}. ${L.san[i]}` : i === 0 ? `${full}… ${L.san[i]}` : L.san[i]; };
+    const show = () => {
+      const L = lines[which];
+      $('#linemoves').innerHTML = L.san.map((_, i) => `<button class="mv ${i === k ? 'cur' : ''}" data-i="${i}">${esc(label(L, i))}</button>`).join(' ');
+      $('#linemoves').querySelectorAll('.mv').forEach((b) => (b.onclick = () => { k = +b.dataset.i; show(); }));
+      if (k < 0) board.set(p.fen, { arrows: [{ from: L.uci[0].slice(0, 2), to: L.uci[0].slice(2, 4), kind: which === 'best' ? 'best' : 'played' }] });
+      else board.set(L.fens[k + 1], { lastMove: L.uci[k] });
+    };
+    $('#fb').querySelectorAll('[data-l]').forEach((b) => (b.onclick = () => {
+      which = b.dataset.l; k = -1;
+      $('#fb').querySelectorAll('[data-l]').forEach((x) => x.classList.toggle('on', x === b));
+      show();
+    }));
+    $('#lprev').onclick = () => { k = Math.max(-1, k - 1); show(); };
+    $('#lnext').onclick = () => { k = Math.min(lines[which].san.length - 1, k + 1); show(); };
+    show();
+    $('#pzbtns').innerHTML = `<button class="btn primary" id="next">${t('tr.next')}</button>`;
     $('#next').onclick = viewTraining;
+    // Longer main line: ask the engine again from the puzzle position (the saved line stops after 8 half-moves).
+    const fbEl = $('#fb');
+    getEngine().analyse(p.fen, { depth: Math.max(settings.depth, 14), multipv: 1 }).then((res) => {
+      const pv = res[0]?.pv || [];
+      if (!fbEl.isConnected || pv[0] !== p.solution || pv.length <= lines.best.san.length) return;
+      lines.best = playLine(p.fen, pv.slice(0, 16));
+      if (which === 'best') show();
+    }).catch(() => {});
   }
 }
 
@@ -643,7 +690,7 @@ async function viewSettings() {
     const changed = usernames.join('|').toLowerCase() !== s.usernames.join('|').toLowerCase();
     await db.saveSettings({ ...s, usernames, depth: +$('#depth').value, puzzleRepeats: Math.max(1, +$('#rep').value || 3), includeInaccuracies: $('#inacc').checked });
     if (changed) await reassignUsers(usernames);
-    $('#saved').textContent = t('se.saved');
+    if ($('#saved')) $('#saved').textContent = t('se.saved');
   };
   $('#exp').onclick = async () => {
     const blob = new Blob([JSON.stringify(await db.exportAll())], { type: 'application/json' });
