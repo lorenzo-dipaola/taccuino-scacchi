@@ -63,6 +63,7 @@ export async function deleteGame(id) {
 }
 
 export async function allPuzzles() { return (await dbp).getAll('puzzles'); }
+export async function getPuzzle(id) { return (await dbp).get('puzzles', id); }
 export async function putPuzzle(p) {
   const db = await dbp;
   const tx = db.transaction(['puzzles', 'dirty'], 'readwrite');
