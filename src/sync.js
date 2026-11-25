@@ -47,7 +47,12 @@ export async function sendCode(email) {
 }
 
 export async function verifyCode(email, token) {
-  const { data, error } = await client.auth.verifyOtp({ email, token, type: 'email' });
+  // A first sign-in sends the "confirm sign-up" email, whose code is of type 'signup'.
+  let { data, error } = await client.auth.verifyOtp({ email, token, type: 'email' });
+  if (error) {
+    const r = await client.auth.verifyOtp({ email, token, type: 'signup' });
+    if (!r.error) ({ data, error } = r);
+  }
   if (error) throw error;
   status.user = data.user;
   emit('auth');
